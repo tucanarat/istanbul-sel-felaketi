@@ -80,8 +80,8 @@ const people = [
 ];
 
 const map = L.map("map",{zoomControl:true}).setView([41.07,28.99],11);
-L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{
-  attribution:"© OpenStreetMap katkıda bulunanlar © CARTO",maxZoom:18}).addTo(map);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
+  attribution:"© <a href='https://www.openstreetmap.org/copyright' target='_blank' rel='noopener'>OpenStreetMap</a> katkıda bulunanlar",maxZoom:19}).addTo(map);
 
 const icon = (color,found)=>L.divIcon({className:"",iconSize:[16,16],iconAnchor:[8,8],
   html:`<div class="pin ${found?"found":""}" style="color:${color};border-color:${found?"#fff":color}"></div>`});
