@@ -47,9 +47,6 @@ button.item:focus-visible{outline:2px solid var(--sel);outline-offset:-2px}
     <div class="legend">
       <span><i class="ring" style="border-color:#666"></i>Olay / kaybolma noktası</span>
       <span><i class="dot" style="background:#666"></i>Bulunduğu nokta</span>
-      <label style="display:flex;align-items:center;gap:8px;margin-top:8px;color:var(--ink);cursor:pointer">
-        <input type="checkbox" id="dereToggle"> Dere hattını göster (yaklaşık)
-      </label>
     </div>
     <div id="list"></div>
     <div class="info">
@@ -126,16 +123,6 @@ people.forEach((p,i)=>{
   list.appendChild(b);
 });
 
-// Dere hattı (yaklaşık, elle çizilmiştir): Ayazağa → Cendere Vadisi → Kağıthane → Haliç.
-// Kesin hat için İBB/İSKİ açık verisiyle değiştirin.
-const dereHatti = L.polyline([
-  [41.1055,29.0170],[41.0990,29.0090],[41.0920,29.0030],[41.0860,28.9960],[41.0815,28.9860],
-  [41.0775,28.9745],[41.0720,28.9700],[41.0650,28.9610],[41.0590,28.9540],[41.0555,28.9490]
-],{color:"#4a90c2",weight:4,opacity:.65,lineCap:"round"})
-  .bindTooltip("Ayazağa – Cendere – Kağıthane Deresi hattı (yaklaşık)",{sticky:true});
-document.getElementById("dereToggle").addEventListener("change",e=>{
-  e.target.checked ? dereHatti.addTo(map).bringToBack() : map.removeLayer(dereHatti);
-});
 
 map.fitBounds(L.featureGroup(Object.values(groups)).getBounds().pad(.12));
 </script>
