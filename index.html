@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>İstanbul selinde hayatını kaybedenler</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--bg:#f6f7f8;--panel:#fff;--ink:#1d2329;--mute:#5f6b76;--line:#d9dee3;
+--sel:#1f5f8b;--elek:#c98a0b;--dus:#7a4f9e}
+@media (prefers-color-scheme:dark){:root{--bg:#14181c;--panel:#1c2227;--ink:#e8ecef;--mute:#9aa6b1;--line:#2c353d}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font:15px/1.5 Georgia,"Times New Roman",serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column}
+header{padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+h1{font-size:19px;margin:0 0 2px}
+header p{margin:0;color:var(--mute);font:13px/1.4 system-ui,sans-serif}
+main{flex:1;display:flex;min-height:0}
+#map{flex:1;min-width:0}
+aside{width:290px;overflow:auto;background:var(--panel);border-left:1px solid var(--line);font-family:system-ui,sans-serif}
+.legend{padding:12px 14px;border-bottom:1px solid var(--line);font-size:13px;color:var(--mute)}
+.legend span{display:flex;align-items:center;gap:8px;margin:3px 0}
+.dot{width:12px;height:12px;border-radius:50%;flex:none}
+.ring{background:#fff;border:2.5px solid;width:12px;height:12px;border-radius:50%;flex:none}
+button.item{all:unset;display:block;width:100%;padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer;box-sizing:border-box}
+button.item:hover,button.item.on{background:var(--bg)}
+button.item:focus-visible{outline:2px solid var(--sel);outline-offset:-2px}
+.item b{display:block;font-size:14px}.item small{color:var(--mute);font-size:12.5px}
+.pin{width:16px;height:16px;border-radius:50%;border:3px solid;background:#fff}
+.pin.found{background:currentColor;border-color:#fff;box-shadow:0 0 0 2px currentColor}
+.leaflet-popup-content{font:13.5px/1.5 system-ui,sans-serif;margin:12px 14px}
+.leaflet-popup-content h3{margin:0 0 2px;font:700 16px Georgia,serif}
+.leaflet-popup-content .t{color:#666;margin-bottom:6px}
+.note{font-size:12px;color:#777;margin-top:6px}
+@media (max-width:700px){main{flex-direction:column}aside{width:100%;height:36%;border-left:0;border-top:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>İstanbul’daki selde hayatını kaybedenler</h1>
+  <p>Dolu daire: kaybolma/olay noktası. Dolgulu daire: cansız bedenin bulunduğu nokta. Konumlar haberlerdeki tarifine göre yaklaşıktır.</p>
+</header>
+<main>
+  <div id="map" role="application" aria-label="Harita"></div>
+  <aside>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--sel)"></i>Sel suyuna kapılma</span>
+      <span><i class="dot" style="background:var(--elek)"></i>Elektrik akımına kapılma</span>
+      <span><i class="dot" style="background:var(--dus)"></i>Düşme</span>
+      <span><i class="ring" style="border-color:#666"></i>Olay / kaybolma noktası</span>
+      <span><i class="dot" style="background:#666"></i>Bulunduğu nokta</span>
+    </div>
+    <div id="list"></div>
+  </aside>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// Koordinatlar yaklaşıktır; kesin konum öğrenildikçe güncelleyin.
+const C = {sel:"#1f5f8b", elek:"#c98a0b", dus:"#7a4f9e"};
+const people = [
+  {name:"Mahmut Işıldak", age:14, type:"elek", cause:"Elektrik akımına kapıldı",
+   story:"Fatih Balat’ta Çukurbostan Parkı yakınında yağış sonrası oluşan su birikintisine bastığı sırada elektrik akımına kapıldı; olay yerinde hayatını kaybetti.",
+   event:{place:"Çukurbostan Parkı yakını, Balat", ll:[41.0262,28.9498]}},
+  {name:"S.Y.", age:34, type:"dus", cause:"Düşme",
+   story:"Sarıyer Ayazağa’da sel sularında ilerlemeye çalışırken dengesini kaybedip düştü, başını kaldırıma çarptı. Kaldırıldığı hastanede yaşamını yitirdi.",
+   event:{place:"Ayazağa Mahallesi, Sarıyer", ll:[41.1068,29.0205]}},
+  {name:"Ahmet Usta", age:56, type:"sel", cause:"Sel suyuna kapıldı",
+   story:"Ayazağa’da sel sularına kapılarak kayboldu. Cansız bedeni Kağıthane’de Sadabad Parkı yakınında, dere üzerindeki bir köprü ayağına takılmış halde bulundu.",
+   event:{place:"Ayazağa, Sarıyer", ll:[41.1045,29.0165]},
+   found:{place:"Sadabad Parkı yakını, Kağıthane", ll:[41.0775,28.9735]}},
+  {name:"Murat Babajanov", age:30, type:"sel", cause:"Sel suyuna kapıldı",
+   story:"Türkmenistan uyruklu Babajanov’un son telefon sinyali Ayazağa Meydanı’ndan alındı. Cansız bedeni günler sonra Haliç’te, Altınboynuz Tesisleri civarında deniz polisince bulundu.",
+   event:{place:"Ayazağa Meydanı, Sarıyer", ll:[41.1052,29.0190]},
+   found:{place:"Haliç, Altınboynuz Tesisleri civarı", ll:[41.0475,28.9385]}},
+  {name:"Haşim Ciritlioğlu", age:55, type:"sel", cause:"Sel suyuna kapıldı",
+   story:"Seyrantepe’deki iş yerinden Ayazağa’daki evine gitmek üzere ayrıldıktan sonra sel sularına kapılarak kayboldu. Cansız bedeni 5 gün sonra Ayvansaray Vapur İskelesi yakınında kıyıya vurmuş halde bulundu.",
+   event:{place:"Ayazağa, Sarıyer", ll:[41.1030,29.0215]},
+   found:{place:"Ayvansaray Vapur İskelesi yakını", ll:[41.0388,28.9437]}}
+];
+
+const map = L.map("map",{zoomControl:true}).setView([41.07,28.99],11);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{
+  attribution:"© OpenStreetMap katkıda bulunanlar © CARTO",maxZoom:18}).addTo(map);
+
+const icon = (color,found)=>L.divIcon({className:"",iconSize:[16,16],iconAnchor:[8,8],
+  html:`<div class="pin ${found?"found":""}" style="color:${color};border-color:${found?"#fff":color}"></div>`});
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function popup(p, pt, label){
+  return `<h3>${esc(p.name)}${p.age?` (${p.age})`:""}</h3>
+    <div class="t">${esc(p.cause)}</div>
+    <div><b>${label}:</b> ${esc(pt.place)}</div>
+    <p style="margin:6px 0">${esc(p.story)}</p>
+    <div class="note">Konum yaklaşıktır.</div>`;
+}
+
+const groups = {};
+const list = document.getElementById("list");
+
+people.forEach((p,i)=>{
+  const col = C[p.type], g = L.featureGroup().addTo(map);
+  groups[i] = g;
+  L.marker(p.event.ll,{icon:icon(col,false),title:p.name+" – olay noktası"})
+    .bindPopup(popup(p,p.event,"Olay noktası"),{maxWidth:300}).addTo(g);
+  if(p.found){
+    L.polyline([p.event.ll,p.found.ll],{color:col,weight:2.5,opacity:.8,dashArray:"6 7"}).addTo(g)
+      .bindTooltip("Düz çizgi, gerçek sürüklenme rotası değildir");
+    L.marker(p.found.ll,{icon:icon(col,true),title:p.name+" – bulunduğu nokta"})
+      .bindPopup(popup(p,p.found,"Bulunduğu nokta"),{maxWidth:300}).addTo(g);
+  }
+  const b = document.createElement("button");
+  b.className="item";
+  b.innerHTML=`<b>${esc(p.name)}${p.age?`, ${p.age}`:""}</b><small>${esc(p.cause)} · ${esc(p.event.place)}</small>`;
+  b.onclick=()=>{
+    document.querySelectorAll(".item").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");
+    map.flyToBounds(g.getBounds().pad(.35),{duration:.8,maxZoom:15});
+    g.getLayers().find(l=>l instanceof L.Marker).openPopup();
+  };
+  list.appendChild(b);
+});
+
+map.fitBounds(L.featureGroup(Object.values(groups)).getBounds().pad(.12));
+</script>
+</body>
+</html>
