@@ -44,9 +44,6 @@ button.item:focus-visible{outline:2px solid var(--sel);outline-offset:-2px}
   <div id="map" role="application" aria-label="Harita"></div>
   <aside>
     <div class="legend">
-      <span><i class="dot" style="background:var(--sel)"></i>Sel suyuna kapılma</span>
-      <span><i class="dot" style="background:var(--elek)"></i>Elektrik akımına kapılma</span>
-      <span><i class="dot" style="background:var(--dus)"></i>Düşme</span>
       <span><i class="ring" style="border-color:#666"></i>Olay / kaybolma noktası</span>
       <span><i class="dot" style="background:#666"></i>Bulunduğu nokta</span>
     </div>
@@ -57,7 +54,7 @@ button.item:focus-visible{outline:2px solid var(--sel);outline-offset:-2px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 // Koordinatlar yaklaşıktır; kesin konum öğrenildikçe güncelleyin.
-const C = {sel:"#1f5f8b", elek:"#c98a0b", dus:"#7a4f9e"};
+const COLORS = ["#d55e00","#cc79a7","#0072b2","#009e73","#6a3d9a"]; // kişi sırasına göre
 const people = [
   {name:"Mahmut Işıldak", age:14, type:"elek", cause:"Elektrik akımına kapıldı",
    story:"Fatih Balat’ta Çukurbostan Parkı yakınında yağış sonrası oluşan su birikintisine bastığı sırada elektrik akımına kapıldı; olay yerinde hayatını kaybetti.",
@@ -99,7 +96,7 @@ const groups = {};
 const list = document.getElementById("list");
 
 people.forEach((p,i)=>{
-  const col = C[p.type], g = L.featureGroup().addTo(map);
+  const col = COLORS[i], g = L.featureGroup().addTo(map);
   groups[i] = g;
   L.marker(p.event.ll,{icon:icon(col,false),title:p.name+" – olay noktası"})
     .bindPopup(popup(p,p.event,"Olay noktası"),{maxWidth:300}).addTo(g);
@@ -111,7 +108,7 @@ people.forEach((p,i)=>{
   }
   const b = document.createElement("button");
   b.className="item";
-  b.innerHTML=`<b>${esc(p.name)}${p.age?`, ${p.age}`:""}</b><small>${esc(p.cause)} · ${esc(p.event.place)}</small>`;
+  b.innerHTML=`<b><i class="dot" style="background:${col};display:inline-block;margin-right:8px"></i>${esc(p.name)}${p.age?`, ${p.age}`:""}</b><small style="margin-left:20px;display:block">${esc(p.cause)} · ${esc(p.event.place)}</small>`;
   b.onclick=()=>{
     document.querySelectorAll(".item").forEach(x=>x.classList.remove("on"));
     b.classList.add("on");
