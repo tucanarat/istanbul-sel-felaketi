@@ -47,11 +47,12 @@ button.item:focus-visible{outline:2px solid var(--sel);outline-offset:-2px}
     <div class="legend">
       <span><i class="ring" style="border-color:#666"></i>Olay / kaybolma noktası</span>
       <span><i class="dot" style="background:#666"></i>Bulunduğu nokta</span>
+      <span><svg width="22" height="12" viewBox="0 0 22 12" style="flex:none"><line x1="1" y1="6" x2="21" y2="6" stroke="#666" stroke-width="4" stroke-linecap="round"/></svg>Olay noktasından bulunduğu noktaya düz hat (gerçek rota değil)</span>
     </div>
     <div id="list"></div>
     <div class="info">
       <h2>Haritada gösterilmeyen</h2>
-      <p style="margin:0"><b>Faik Şentürk</b><br>Beykoz’da bir okul inşaatında çalışırken kuyuda biriken sel sularını tahliye etmeye çalıştığı sırada kuyuya düştü. Ağır yaralandığı hastanede hayatını kaybetti. Akıntıya kapılma durumu olmadı.</p>
+      <p style="margin:0"><b>Faik Şentürk</b><br>Beykoz’da bir okul inşaatında çalışırken kuyuda biriken sel sularını tahliye etmeye çalıştığı sırada kuyuya düştü. Ağır yaralandığı hastanede hayatını kaybetti.</p>
     </div>
   </aside>
 </main>
@@ -98,6 +99,7 @@ function popup(p, pt, label){
 }
 
 const groups = {};
+let arrowN = 0;
 const list = document.getElementById("list");
 
 people.forEach((p,i)=>{
@@ -106,8 +108,14 @@ people.forEach((p,i)=>{
   L.marker(p.event.ll,{icon:icon(col,false),title:p.name+" – olay noktası"})
     .bindPopup(popup(p,p.event,"Olay noktası"),{maxWidth:300}).addTo(g);
   if(p.found){
-    L.polyline([p.event.ll,p.found.ll],{color:col,weight:2.5,opacity:.8,dashArray:"6 7"}).addTo(g)
-      .bindTooltip("Düz çizgi, gerçek sürüklenme rotası değildir");
+    const a=p.event.ll, z=p.found.ll, km=(map.distance(a,z)/1000).toFixed(1).replace(".",",");
+    L.polyline([a,z],{color:"#fff",weight:9,opacity:.95,lineCap:"round"}).addTo(g);
+    L.polyline([a,z],{color:col,weight:5,opacity:1,lineCap:"round"}).addTo(g)
+      .bindTooltip(`${p.name}: olay noktasından bulunduğu yere yaklaşık ${km} km (düz hat; gerçek rota değildir)`,{sticky:true});
+    const t=.38+.12*arrowN++, m=[a[0]+(z[0]-a[0])*t, a[1]+(z[1]-a[1])*t];
+    const ang=Math.atan2((z[1]-a[1])*Math.cos(a[0]*Math.PI/180), z[0]-a[0])*180/Math.PI;
+    L.marker(m,{interactive:false,icon:L.divIcon({className:"",iconSize:[26,26],iconAnchor:[13,13],
+      html:`<svg width="26" height="26" viewBox="0 0 26 26" style="transform:rotate(${ang}deg)"><path d="M13 2 L22 21 L13 16 L4 21 Z" fill="${col}" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/></svg>`})}).addTo(g);
     L.marker(p.found.ll,{icon:icon(col,true),title:p.name+" – bulunduğu nokta"})
       .bindPopup(popup(p,p.found,"Bulunduğu nokta"),{maxWidth:300}).addTo(g);
   }
